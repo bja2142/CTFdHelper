@@ -21,6 +21,24 @@ ctf_initial_data = {
     "_submit": ("Finish",),
 }
 
+#https://stackoverflow.com/questions/63974944/posting-multi-part-form-encoded-dict
+
+#https://stackoverflow.com/a/75695201
+def dict_to_multipart(dict_data):
+    file_data = []
+    for key in dict_data.keys():
+        value = dict_data[key][0]
+        headers = None
+        filename = None
+        if len(dict_data[key]) >1:
+            filename = dict_data[key][1]
+        if len(dict_data[key]) >2:
+            headers = dict_data[key][2]
+        file_data.append((str(key),(filename,str(value),headers)))
+        #trial and error: name={0}, filename={1}, Content-Type: {3}, Content:{2}
+    return file_data
+
+
 class CTFdHelper:
 
     def __init__(self,url_base,username="admin", password="password123", initial_data = ctf_initial_data):
