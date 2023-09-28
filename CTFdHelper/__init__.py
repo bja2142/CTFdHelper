@@ -1,5 +1,5 @@
 from requests import Session as requests_session
-
+import re
 ctf_initial_data = {
     "ctf_name": ("Event Name Here",),
     "ctf_description": ("Event Description here",),
@@ -49,7 +49,7 @@ class CTFdHelper:
         self.api_token = None
         self.csrf_nonce = None
         self.initial_data = initial_data
-        self.establish_session()
+        #self.establish_session()
 
     def get(self, url, **args):
         return self.session.get(self.url_base + url, **args)
