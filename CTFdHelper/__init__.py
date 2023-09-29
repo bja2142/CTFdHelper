@@ -63,8 +63,17 @@ class CTFdHelper:
     def post(self, url, **args):
         return self.session.post(self.url_base + url, **args)
 
+    def patch(self, url, **args):
+        return self.session.patch(self.url_base + url, **args)
+
     def api_post(self, url, **args):
         return self.post('/api/v1' + url, **args)
+
+    def api_get(self, url, **args):
+        return self.get('/api/v1' + url, **args)
+
+    def api_patch(self, url, **args):
+        return self.patch('/api/v1' + url, **args)
 
     def api_post_challenge(self,
                            name, description, connection_info, value, category, chal_type, max_attempts=0, state="visible"):
@@ -114,6 +123,40 @@ class CTFdHelper:
             "value" : value
         }
         return self.api_post('/tags', json=blob)
+
+    def pause_ctf(self):
+        blob = {
+            "paused": True
+        }
+        return self.api_patch('/configs', json=blob)
+
+    def get_challenge_list(self):
+        challenges = self.api_get('/challenges')
+        challenges_list = challenges.json()["data"]
+        return challenges_list
+
+    def hide_all_challenges(self):
+        challenges = self.get_challenge_list()
+        for challenge in challenges:
+            self.hide_challenge(challenge["id"])
+
+    def hide_challenge(self, challenge_id):
+        blob = {
+            "state": "hidden"
+        }
+        return self.api_patch('/challenges/{}'.format(challenge_id), json=blob)
+
+    def show_challenge(self, challenge_id):
+        blob = {
+            "state": "visible"
+        }
+        return self.api_patch('/challenges/{}'.format(challenge_id), json=blob)
+
+    def unpause_ctf(self):
+        blob = {
+            "paused": False
+        }
+        return self.api_patch('/configs', json=blob)
 
     def prep_api(self, force=False):
         if self.api_token == None or force:
