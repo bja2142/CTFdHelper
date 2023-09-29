@@ -1,5 +1,11 @@
 from requests import Session as requests_session
 import re
+import copy
+import json
+from datetime import datetime, timedelta
+from secrets import token_urlsafe
+
+import re
 ctf_initial_data = {
     "ctf_name": ("Event Name Here",),
     "ctf_description": ("Event Description here",),
