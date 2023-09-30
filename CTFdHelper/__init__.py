@@ -89,6 +89,29 @@ class CTFdHelper:
         }
         return self.api_post('/challenges', json=blob)
 
+    def api_get_scoreboard(self):
+        return self.api_get('/scoreboard').json()["data"]
+
+    def api_get_submissions(self):
+        response = self.api_get('/submissions').json()
+        pagination = response["meta"]["pagination"]
+        pages = pagination["pages"]
+        results = []
+        for page in range(1,int(pages)+1):
+            page_response = self.api_get('/submissions?page='+str(page)).json()
+            results += page_response["data"]
+        return results
+
+    def get_backup(self):
+        response = self.get("/admin/export")
+        return response
+
+    def save_backup_to_disk(self,outfile):
+        data = self.get_backup()
+        f = open(outfile, "wb")
+        f.write(data.content)
+        f.close()
+
     def api_post_flag(self, challenge_id, flag_type, content, data=""):
         blob = {
             "challenge_id": challenge_id,
