@@ -1,4 +1,7 @@
 from requests import Session as requests_session
+from requests.exceptions import ConnectionError
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 import re
 import copy
 import json
@@ -52,6 +55,10 @@ class CTFdHelper:
         self.password = password
         self.username = username
         self.session = requests_session()
+        retry = Retry(connect=3, backoff_factor=0.5)
+        adapter = HTTPAdapter(max_retries=retry)
+        self.session.mount('http://', adapter)
+        self.session.mount('https://', adapter)
         self.api_token = None
         self.csrf_nonce = None
         self.initial_data = initial_data
@@ -66,6 +73,9 @@ class CTFdHelper:
     def patch(self, url, **args):
         return self.session.patch(self.url_base + url, **args)
 
+    def delete(self, url, **args):
+        return self.session.delete(self.url_base + url, **args)
+
     def api_post(self, url, **args):
         return self.post('/api/v1' + url, **args)
 
@@ -74,6 +84,9 @@ class CTFdHelper:
 
     def api_patch(self, url, **args):
         return self.patch('/api/v1' + url, **args)
+
+    def api_delete(self, url, **args):
+        return self.delete('/api/v1' + url, **args)
 
     def api_post_challenge(self,
                            name, description, connection_info, value, category, chal_type, max_attempts=0, state="visible"):
@@ -147,6 +160,62 @@ class CTFdHelper:
         }
         return self.api_post('/tags', json=blob)
 
+    def api_post_page(self,
+                     route,
+                     title=None,
+                     content="",
+                     draft = False,
+                     hidden=None,
+                     auth_required=True,
+                     format="markdown"):
+        blob = {
+            "route" : route,
+            "content": content,
+            "draft" : draft,
+            "auth_required" : auth_required,
+            "format" : format,
+        }
+        if title:
+            blob["title"] = title
+        if hidden != None:
+            blob["hidden"] = hidden
+        return self.api_post('/pages', json=blob)
+
+    def api_patch_page(self, pageid,
+                     route=None,
+                     title=None,
+                     content=None,
+                     draft=None,
+                     hidden=None,
+                     auth_required=None,
+                     format="markdown"):
+        blob = {}
+        if route != None:
+            blob["route"] = route
+        if title != None:
+            blob["title"] = title
+        if content != None:
+            blob["content"] = content
+        if draft != None:
+            blob["draft"] = draft
+        if hidden != None:
+            blob["hidden"] = hidden
+        if auth_required != None:
+            blob["auth_required"] = auth_required
+        if format != None:
+            blob["format"] = format
+
+        return self.api_patch('/pages/{}'.format(pageid), json=blob)
+        
+    def api_delete_page(self, pageid):
+        return self.api_delete('/pages/{}'.format(pageid))
+
+    def api_get_page(self, pageid):
+        return self.api_get('/pages/{}'.format(pageid))
+
+    def api_get_pages(self):
+        return self.api_get('/pages')
+
     def pause_ctf(self):
         blob = {
             "paused": True
@@ -204,9 +273,13 @@ class CTFdHelper:
         self.api_token = result.json()['data']['value']
 
     def establish_session(self):
-        resp = self.get('/setup')
-        if "SetupForm" in resp.text:
-            nonce = self.get_nonce(resp.text)
+        try:
+            resp = self.get('/setup')
+            response_text = resp.text
+        except ConnectionError as e:
+            response_text = ""
+        if "SetupForm" in response_text:
+            nonce = self.get_nonce(response_text)
             self.initialize_ctf(nonce)
         else:
             self.login()
