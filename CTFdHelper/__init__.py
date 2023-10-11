@@ -215,6 +215,28 @@ class CTFdHelper:
 
     def api_get_pages(self):
         return self.api_get('/pages')
+    
+    def api_get_config_list(self):
+        return self.api_get('/configs')
+    
+    def api_get_config_key(self, key):
+        return self.api_get('/configs/{}'.format(key))
+    
+    def api_patch_config_key(self, key, value):
+        blob = {key : value}
+        return self.api_patch('/configs', json=blob)
+    
+    def api_delete_config(self, key):
+        return self.api_delete('/configs/{}'.format(key))
+    
+    def api_get_config_fields(self):
+        return self.api_get('/configs/fields')
+
+    def api_get_config_field(self, field_id):
+        return self.api_get('/configs/fields/{}'.format(field_id))
+
+    def set_new_theme(self, themename):
+        return self.api_patch_config_key("ctf_theme", themename)
 
     def pause_ctf(self):
         blob = {
@@ -285,6 +307,14 @@ class CTFdHelper:
             self.login()
         self.get_csrf()
         self.prep_api()
+
+    def remove_all_pages(self):
+        response = self.api_get_pages().json()
+        pages = response["data"]
+        for page in pages:
+            self.api_delete_page(page["id"])
+        
+        
 
     def login(self):
         resp = self.get('/login')
