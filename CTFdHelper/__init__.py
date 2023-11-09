@@ -47,6 +47,12 @@ def dict_to_multipart(dict_data):
         #trial and error: name={0}, filename={1}, Content-Type: {3}, Content:{2}
     return file_data
 
+DEFAULT_THEME_SETTINGS = {
+  "challenge_window_size": "xl",
+  "challenge_category_order": "function compare(a, b) {\r\n  if (a < b) {\r\n    return -1;\r\n  }\r\n  if (a > b) {\r\n    return 1;\r\n  }\r\n  return 0;\r\n}",
+  "challenge_order": "function compare(a, b) {\r\n  if (a.value < b.value) {\r\n    return -1;\r\n  }\r\n  if (a.value > b.value) {\r\n    return 1;\r\n  }\r\n  if (a < b) {\r\n    return -1;\r\n  }\r\n  if (a > b) {\r\n    return 1;\r\n  }\r\n  return 0;\r\n}",
+  "use_builtin_code_highlighter": True
+}
 
 class CTFdHelper:
 
@@ -241,6 +247,14 @@ class CTFdHelper:
     def pause_ctf(self):
         blob = {
             "paused": True
+        }
+        return self.api_patch('/configs', json=blob)
+
+    def apply_theme_settings(self, settings=False):
+        if not settings:
+            settings = DEFAULT_THEME_SETTINGS
+        blob = {
+            "theme_settings" : json.dumps(settings)
         }
         return self.api_patch('/configs', json=blob)
 
