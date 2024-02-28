@@ -7,6 +7,8 @@ import copy
 import json
 from datetime import datetime, timedelta
 from secrets import token_urlsafe
+from mimetypes import guess_type
+from pathlib import PosixPath
 
 import re
 ctf_initial_data = {
@@ -45,6 +47,21 @@ def dict_to_multipart(dict_data):
             headers = dict_data[key][2]
         file_data.append((str(key),(filename,str(value),headers)))
         #trial and error: name={0}, filename={1}, Content-Type: {3}, Content:{2}
+    return file_data
+
+def file_to_multipart(name, filename, content_type, content, data={}):
+    file_data = []
+    if content_type:
+        headers = content_type
+    else:
+        headers = None
+    filename = filename
+    file_data.append((str(name),(filename, content, headers)))
+    for key in data.keys():
+        value = data[key]
+        headers = None
+        filename = None
+        file_data.append((str(key),(filename,str(value),headers)))
     return file_data
 
 DEFAULT_THEME_SETTINGS = {
@@ -241,6 +258,9 @@ class CTFdHelper:
     def api_get_config_field(self, field_id):
         return self.api_get('/configs/fields/{}'.format(field_id))
 
+    def api_delete_challenge(self, challengeid):
+        return self.api_delete('/challenges/{}'.format(challengeid))
+
     def set_new_theme(self, themename):
         return self.api_patch_config_key("ctf_theme", themename)
 
@@ -279,6 +299,27 @@ class CTFdHelper:
             "state": "visible"
         }
         return self.api_patch('/challenges/{}'.format(challenge_id), json=blob)
+
+    def upload_challenge_file_from_path(self, challenge_id, path, new_fname = None):
+        file = PosixPath(path)
+        fname = file.name
+        if new_fname:
+            fname = new_fname
+        content_type = guess_type(file.name)[0]
+        if not content_type:
+            content_type = "application/octet-stream"
+        data = file.read_bytes()
+        return self.upload_challenge_file(challenge_id, fname, data, content_type)
+    
+    def upload_challenge_file(self, challenge_id, fname, content, content_type):
+        challenge_info = {
+            "nonce": self.csrf_nonce,
+            "challenge": str(challenge_id),
+            "type": "challenge"
+        }
+        data = file_to_multipart("file", fname, content_type, content, challenge_info)
+        resp = self.api_post('/files', files=data)
+        return resp
 
     def unpause_ctf(self):
         blob = {
@@ -341,6 +382,7 @@ class CTFdHelper:
         }
         form_data = dict_to_multipart(form_data)
         resp = self.post('/login', files=form_data)
+        return resp
 
     def create_user(self,username, password):
         resp = self.api_post_user(username, password, username+"@example.com")
