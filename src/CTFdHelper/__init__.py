@@ -264,6 +264,10 @@ class CTFdHelper:
     def set_new_theme(self, themename):
         return self.api_patch_config_key("ctf_theme", themename)
 
+    def api_patch_challenge_requirement(self, challenge_id, requirement):
+        blob = {"requirements":{"prerequisites":[int(requirement)]}}
+        return self.api_patch("/challenges/{}".format(challenge_id), json=blob)
+    
     def pause_ctf(self):
         blob = {
             "paused": True

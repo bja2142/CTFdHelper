@@ -1,8 +1,8 @@
 [project]
 name = "CTFdHelper"
-version = "0.0.1"
+version = "0.0.2"
 authors = [
-  { name="Ben Allison", email="ben@jianmin.dev" },
+  { name="Ben Allison", email="ben@jianmin.dev" }
 ]
 description = "A small wrapper for CTFd"
 readme = "README.md"
